@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL注入演示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    background-color: #f5f7fa;
+    color: #333;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: linear-gradient(135deg, #dc3545, #ff6b6b);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.security-mode {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: rgba(255, 255, 255, 0.15);
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff6b6b;
+    transition: .4s;
+    border-radius: 30px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #28a745;
+}
+
+input:checked + .slider:before {
+    transform: translateX(30px);
+}
+
+.main-content {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.panel {
+    flex: 1;
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.panel h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+input, select {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+input:focus, select:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+.btn {
+    padding: 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn:hover {
+    background-color: #2980b9;
+}
+
+.btn.attack {
+    background-color: #dc3545;
+}
+
+.btn.attack:hover {
+    background-color: #c82333;
+}
+
+.sql-display {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 15px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.result-area {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px dashed #ddd;
+}
+
+.result-title {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.result-content {
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.user-table th, .user-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.user-table th {
+    background-color: #f2f2f2;
+}
+
+.examples {
+    margin-top: 20px;
+}
+
+.example {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border-left: 4px solid #3498db;
+}
+
+.example-title {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.info-section {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.protection-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.protection-item {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-top: 4px solid #28a745;
+}
+
+.warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #7f8c8d;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-database"></i> SQL注入演示</h1>
+            <div class="security-mode">
+                <span>攻擊模式</span>
+                <label class="switch">
+                    <input type="checkbox" id="securityToggle">
+                    <span class="slider"></span>
+                </label>
+                <span>防護模式</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="panel">
+                <h2><i class="fas fa-user-shield"></i> 登入模擬</h2>
+                <div id="messageArea"></div>
+                
+                <form class="login-form">
+                    <div class="form-group">
+                        <label>使用者名稱:</label>
+                        <input type="text" id="username" value="admin">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>密碼:</label>
+                        <input type="password" id="password" value="password123">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>注入範例:</label>
+                        <select id="injectionType">
+                            <option value="custom">自訂輸入</option>
+                            <option value="alwaysTrue">永真條件</option>
+                            <option value="comment">註解繞過</option>
+                            <option value="union">UNION攻擊</option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i> 正常登入
+                    </button>
+                    
+                    <button type="button" class="btn attack" id="attackBtn">
+                        <i class="fas fa-bug"></i> 注入攻擊
+                    </button>
+                </form>
+                
+                <div class="examples">
+                    <h3>SQL注入範例:</h3>
+                    <div class="example">
+                        <div class="example-title">繞過登入: ' OR '1'='1</div>
+                        <div class="example-desc">可繞過身分驗證</div>
+                    </div>
+                    <div class="example">
+                        <div class="example-title">註解攻擊: admin' --</div>
+                        <div class="example-desc">忽略密碼驗證</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2><i class="fas fa-code"></i> SQL語句與結果</h2>
+                
+                <div class="sql-display" id="sqlDisplay">
+                    SELECT * FROM users WHERE username = '輸入使用者名稱' AND password = '輸入密碼'
+                </div>
+                
+                <div class="result-area">
+                    <div class="result-title">執行結果:</div>
+                    <div class="result-content" id="resultContent">
+                        等待執行查詢...
+                    </div>
+                </div>
+                
+                <div class="result-area">
+                    <div class="result-title">使用者資料 (模擬):</div>
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>使用者名稱</th>
+                                <th>密碼</th>
+                                <th>角色</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h3><i class="fas fa-shield-alt"></i> SQL注入防護</h3>
+            <div class="protection-list">
+                <div class="protection-item">
+                    <h4><i class="fas fa-check-circle"></i> 參數化查詢</h4>
+                    <p>使用預編譯語句和參數綁定</p>
+                </div>
+                <div class="protection-item">
+                    <h4><i class="fas fa-filter"></i> 輸入驗證</h4>
+                    <p>對使用者輸入進行嚴格驗證</p>
+                </div>
+            </div>
+            
+            <div class="warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <h4>安全警告</h4>
+                    <p>本演示僅用於教育目的</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>SQL注入演示工具 &copy; 2023 | 僅供教育目的</p>
+        </footer>
+    </div>
+
+    <script src="script.js">const mockUsers = [
+    { id: 1, username: "admin", password: "admin123", role: "管理員" },
+    { id: 2, username: "user1", password: "password123", role: "普通使用者" },
+    { id: 3, username: "test", password: "test123", role: "測試使用者" }
+];
+
+function initUserTable() {
+    const tableBody = document.getElementById('userTable');
+    tableBody.innerHTML = '';
+    
+    mockUsers.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.username}</td>
+            <td>${user.password}</td>
+            <td>${user.role}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function showMessage(message, type) {
+    const messageArea = document.getElementById('messageArea');
+    const color = type === 'success' ? '#28a745' : 
+                  type === 'danger' ? '#dc3545' : '#17a2b8';
+    
+    messageArea.innerHTML = `
+        <div style="background-color:${color}20; color:${color}; 
+                    padding:10px; border-radius:6px; border:1px solid ${color}40;
+                    margin-bottom:15px;">
+            ${message}
+        </div>
+    `;
+    
+    setTimeout(() => {
+        messageArea.innerHTML = '';
+    }, 3000);
+}
+
+function updateSqlDisplay(username, password, isAttack = false) {
+    const sqlDisplay = document.getElementById('sqlDisplay');
+    const securityMode = document.getElementById('securityToggle').checked;
+    
+    let displayUsername = username;
+    let displayPassword = password;
+    
+    if (securityMode && !isAttack) {
+        displayUsername = displayUsername.replace(/'/g, "\\'");
+        displayPassword = displayPassword.replace(/'/g, "\\'");
+    }
+    
+    const usernameSpan = isAttack && !securityMode ? 
+        `<span style="color:#e74c3c;background-color:#ffe6e6;">${displayUsername}</span>` : 
+        `<span>${displayUsername}</span>`;
+    
+    const passwordSpan = isAttack && !securityMode ? 
+        `<span style="color:#e74c3c;background-color:#ffe6e6;">${displayPassword}</span>` : 
+        `<span>${displayPassword}</span>`;
+    
+    sqlDisplay.innerHTML = `
+        SELECT * FROM users WHERE username = '${usernameSpan}' AND password = '${passwordSpan}'
+    `;
+}
+
+function executeQuery(username, password, isAttack = false) {
+    const securityMode = document.getElementById('securityToggle').checked;
+    const resultContent = document.getElementById('resultContent');
+    
+    if (securityMode && !isAttack) {
+        resultContent.innerHTML = `安全查詢執行:\n參數化查詢: SELECT * FROM users WHERE username = ? AND password = ?\n參數: [${username}, ${password}]\n\n`;
+        
+        const matchedUsers = mockUsers.filter(user => 
+            user.username === username && user.password === password
+        );
+        
+        if (matchedUsers.length > 0) {
+            resultContent.innerHTML += `找到 ${matchedUsers.length} 個使用者`;
+            showMessage('登入成功！', 'success');
+        } else {
+            resultContent.innerHTML += '使用者名稱或密碼錯誤！';
+            showMessage('登入失敗', 'danger');
+        }
+        return;
+    }
+    
+    resultContent.innerHTML = `執行查詢:\nSELECT * FROM users WHERE username = '${username}' AND password = '${password}'\n\n`;
+    
+    if (isAttack) {
+        if (username.includes("' OR '1'='1") || password.includes("' OR '1'='1")) {
+            resultContent.innerHTML += "⚠️ SQL注入成功！繞過登入驗證\n取得所有使用者資料：\n";
+            mockUsers.forEach(user => {
+                resultContent.innerHTML += `ID: ${user.id}, 使用者名稱: ${user.username}, 密碼: ${user.password}\n`;
+            });
+            showMessage('SQL注入成功！', 'danger');
+            return;
+        }
+        
+        if (username.includes("' --") || username.includes("' #")) {
+            resultContent.innerHTML += "⚠️ SQL注入成功！註解繞過密碼驗證\n";
+            const user = mockUsers.find(u => u.username === username.split("'")[0]);
+            if (user) {
+                resultContent.innerHTML += `登入為: ${user.username} (${user.role})`;
+                showMessage('SQL注入成功！', 'danger');
+            }
+            return;
+        }
+    }
+    
+    const matchedUsers = mockUsers.filter(user => 
+        user.username === username && user.password === password
+    );
+    
+    if (matchedUsers.length > 0) {
+        resultContent.innerHTML += `找到 ${matchedUsers.length} 個使用者`;
+        showMessage('登入成功！', 'success');
+    } else {
+        resultContent.innerHTML += '使用者名稱或密碼錯誤！';
+        showMessage('登入失敗', 'danger');
+    }
+}
+
+function setInjectionExample() {
+    const type = document.getElementById('injectionType').value;
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    
+    switch(type) {
+        case 'alwaysTrue':
+            usernameInput.value = "' OR '1'='1";
+            passwordInput.value = "' OR '1'='1";
+            break;
+        case 'comment':
+            usernameInput.value = "admin' -- ";
+            passwordInput.value = "任意密碼";
+            break;
+        case 'union':
+            usernameInput.value = "' UNION SELECT username, password FROM users -- ";
+            passwordInput.value = "任意密碼";
+            break;
+    }
+    
+    updateSqlDisplay(usernameInput.value, passwordInput.value);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initUserTable();
+    
+    updateSqlDisplay('admin', 'password123');
+    
+    document.getElementById('loginBtn').addEventListener('click', function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        updateSqlDisplay(username, password);
+        executeQuery(username, password, false);
+    });
+    
+    document.getElementById('attackBtn').addEventListener('click', function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        updateSqlDisplay(username, password, true);
+        executeQuery(username, password, true);
+    });
+    
+    document.getElementById('securityToggle').addEventListener('change', function() {
+        const isSecure = this.checked;
+        showMessage(isSecure ? '已啟用安全防護模式' : '已啟用攻擊模式', 'info');
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        updateSqlDisplay(username, password);
+    });
+    
+    document.getElementById('injectionType').addEventListener('change', setInjectionExample);
+    
+    document.getElementById('username').addEventListener('input', function() {
+        updateSqlDisplay(this.value, document.getElementById('password').value);
+    });
+    
+    document.getElementById('password').addEventListener('input', function() {
+        updateSqlDisplay(document.getElementById('username').value, this.value);
+    });
+});</script>
+</body>
+</html>
